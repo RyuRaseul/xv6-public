@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "*.sqlbook": "sql",
+        "*.ndjson": "jsonl",
+        "*.dbclient-js": "javascript",
+        "proc.h": "c",
+        "cstdio": "c",
+        "fcntl.h": "c",
+        "types.h": "c",
+        "stat.h": "c",
+        "user.h": "c",
+        "spinlock.h": "c"
+    }
+}

@@ -88,6 +88,7 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  p->nicevalue = 20;  
 
   release(&ptable.lock);
 
@@ -530,5 +531,85 @@ procdump(void)
         cprintf(" %p", pc[i]);
     }
     cprintf("\n");
+  }
+}
+
+int
+getnice(int pid)
+{
+  struct proc *p;
+  int nice = -1;
+  acquire(&ptable.lock);
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->pid == pid){
+      nice = p->nicevalue;
+      break;
+    }
+  }
+  release(&ptable.lock);
+  return nice;
+}
+
+int
+setnice(int pid, int nicevalue)
+{
+  struct proc *p;
+
+  acquire(&ptable.lock);
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->pid == pid){
+      if(nicevalue < 0 || nicevalue > 39){
+        release(&ptable.lock);
+        return -1;
+      }
+      p->nicevalue = nicevalue;
+      release(&ptable.lock);
+      return 0;
+    }
+  }
+  release(&ptable.lock);
+  return -1;
+}
+
+void
+ps(int pid)
+{
+  static char *states[] = {
+    [UNUSED]    "UNUSED",
+    [EMBRYO]    "EMBRYO",
+    [SLEEPING]  "SLEEPING",
+    [RUNNABLE]  "RUNNABLE",
+    [RUNNING]   "RUNNING",
+    [ZOMBIE]    "ZOMBIE"
+  };
+  struct proc *p;
+  acquire(&ptable.lock);
+  if(pid){
+    // print out a process's information
+    // information name, pid, state, priority(nicevalue)
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->pid == pid){
+        cprintf("name\t pid\t state\t\t priority\t\n");
+        cprintf("%s\t %d\t %s\t %d\n", p->name, p->pid, states[p->state], p->nicevalue);
+        release(&ptable.lock);
+        return;
+      }
+    }
+    release(&ptable.lock);
+    return;
+  } else {
+    // print out all processes' information
+    int hasProcess = 0;
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->pid != 0){
+        if(!hasProcess) {
+          cprintf("name\t pid\t state\t\t priority\t\n");
+          hasProcess = 1;
+        }
+        cprintf("%s\t %d\t %s\t %d\n", p->name, p->pid, states[p->state], p->nicevalue);
+      }
+    }
+    release(&ptable.lock);
+    return;
   }
 }
